@@ -38,6 +38,18 @@ images = images / 255.0
 print("Textes shape:", texts.shape)
 print("Images shape:", images.shape)
 
+maxlen = images.shape[0]
+
 tokenizer = Tokenizer()
-texts = pad_sequences(tokenizer.text_to_sequences())
+texts = pad_sequences(tokenizer.texts_to_sequences(texts), maxlen=maxlen)
+
+model = Sequential([
+    Embedding(maxlen, 500, input_shape=images.shape, ndim=6),
+    LSTM(500),
+    Dense(image_width, activation="softmax")
+])
+
+model.compile(optimizer="adam", loss="mse", metrics=["accuracy"])
+
+model.fit(texts, images, epochs=100)
 
