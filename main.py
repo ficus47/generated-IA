@@ -4,9 +4,8 @@ import numpy as np
 
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.layers import Embedding, LSTM, Dense 
+from tensorflow.keras.layers import LSTM, Dense 
 from tensorflow.keras.models import Sequential
-
 
 # Lecture du fichier texte
 texts = []
@@ -34,22 +33,26 @@ images = np.array(images)
 # Normalisation des images
 images = images / 255.0
 
+# Padding des textes
+maxlen = max(len(seq) for seq in texts)
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts(texts)
+texts = pad_sequences(tokenizer.texts_to_sequences(texts), maxlen=maxlen)
+
+# Redimensionnement des images pour le LSTM
+images = images.reshape(images.shape[0], image_width*image_height, 3)
+
+
 # Vérification des dimensions
 print("Textes shape:", texts.shape)
 print("Images shape:", images.shape)
 
-maxlen = images.shape[0]
-
-tokenizer = Tokenizer()
-texts = pad_sequences(tokenizer.texts_to_sequences(texts), maxlen=maxlen)
-
+# Création du modèle
 model = Sequential([
-    Embedding(maxlen, 500, input_shape=images.shape, ndim=6),
-    LSTM(500),
-    Dense(image_width, activation="softmax")
+    LSTM(500, input_shape=(maxlen, 6)),
+    Dense(image_width*image_height*3, activation="sigmoid")
 ])
 
-model.compile(optimizer="adam", loss="mse", metrics=["accuracy"])
+model.compile(optimizer="adam", loss="mse", metrics=["accuracy"], batch_size=16)
 
 model.fit(texts, images, epochs=100)
-
